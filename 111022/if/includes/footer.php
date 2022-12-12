@@ -1,0 +1,1 @@
+<p><strong>This is my Footer</strong></p>
