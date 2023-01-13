@@ -9,6 +9,14 @@ if (isset($_GET['c'])) {
 $categories = getAPI("https://www.thecocktaildb.com/api/json/v1/1/list.php?c=list");
 $cocktails = getAPI('https://www.thecocktaildb.com/api/json/v1/1/filter.php?c=' . $parCategory);
 
+usort($categories, function ($a, $b) {
+    return strcmp($a->strCategory, $b->strCategory);
+});
+
+usort($cocktails, function ($a, $b) {
+    return strcmp($a->strDrink, $b->strDrink);
+});
+
 // print '<pre>';
 // // var_dump($categories);
 // var_dump($cocktails);
