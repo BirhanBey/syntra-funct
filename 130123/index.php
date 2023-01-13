@@ -1,9 +1,13 @@
 <?php
 require('function.php');
 
+$parCategory = "Ordinary Drink";
+if (isset($_GET['c'])) {
+    $parCategory = $_GET['c'];
+}
 
 $categories = getAPI("https://www.thecocktaildb.com/api/json/v1/1/list.php?c=list");
-$cocktails = getAPI('https://www.thecocktaildb.com/api/json/v1/1/filter.php?c=Cocktail');
+$cocktails = getAPI('https://www.thecocktaildb.com/api/json/v1/1/filter.php?c=' . $parCategory);
 
 // print '<pre>';
 // // var_dump($categories);
@@ -22,30 +26,20 @@ $cocktails = getAPI('https://www.thecocktaildb.com/api/json/v1/1/filter.php?c=Co
 
 <body>
     <div class="container text-center">
-
         <ul class="nav nav-pills mb-5">
-
             <?php foreach ($categories as $category) { ?>
-
                 <li class="nav-item">
                     <a class="nav-link" aria-current="page" href="index.php?cat=<?= $category->strCategory ?>">
                         <?= $category->strCategory ?>
                     </a>
                 </li>
-
             <?php } ?>
-
         </ul>
 
-
-
         <div class="row row-cols-1 row-cols-sm-2 row-cols-md-4">
-
             <?php foreach ($cocktails as $cocktail) { ?>
-
                 <div class="col mb-5">
                     <div class="card">
-
                         <img src="<?= $cocktail->strDrinkThumb ?>" class="card-img-top" alt="...">
                         <div class="card-body">
                             <h5 class="card-title"><?= $cocktail->strDrink ?></h5>
@@ -53,11 +47,7 @@ $cocktails = getAPI('https://www.thecocktaildb.com/api/json/v1/1/filter.php?c=Co
                         </div>
                     </div>
                 </div>
-
             <?php } ?>
-
-
-
         </div>
     </div>
 </body>
