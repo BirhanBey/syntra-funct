@@ -155,7 +155,7 @@ if ($mysqli->connect_error) {
             } ?>>
             <a <?php if ($page_no < $total_no_of_pages) {
                     echo "href='?page_no=$next_page'";
-                } ?>>Next</a>
+                } ?>>Next </a>
         </li>
         <?php if ($page_no < $total_no_of_pages) {
             echo "<li><a href='?page_no=$total_no_of_pages'>Last &rsaquo;&rsaquo;</a></li>";
