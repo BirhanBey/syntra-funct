@@ -1,18 +1,15 @@
 <?php
-error_reporting(0);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 $db_host = '127.0.0.1';
 $db_user = 'root';
 $db_password = 'rootpass';
 $db_db = 'moviesdb';
 $db_port = 3306;
 
-$mysqli = new mysqli(
-    $db_host,
-    $db_user,
-    $db_password,
-    $db_db,
-    $db_port
-);
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+$mysqli = new mysqli($db_host, $db_user, $db_password, $db_db, $db_port);
 
 if ($mysqli->connect_error) {
     echo 'Errno: ' . $mysqli->connect_errno;
@@ -21,148 +18,154 @@ if ($mysqli->connect_error) {
     exit();
 }
 
+// Haal het totaal cijfer op
+$sql = "SELECT COUNT(ID) AS total FROM movies";
+$result = $mysqli->query($sql)->fetch_assoc();
+$total = $result["total"];
+
+// Get page ophalen
+$page = 1;
+if (isset($_GET["page"])) {
+    $page = (int) $_GET["page"];
+    if ($page == 0) {
+        $page = 1;
+    }
+}
+
+$direction = 'ASC';
+$directions = [
+    'up' => 'ASC',
+    'down' => 'DESC'
+];
+
+if (isset($_GET["direction"])) {
+    $_GET["direction"] = strtolower($_GET["direction"]);
+    if (isset($directions[$_GET["direction"]])) {
+        $direction = $directions[$_GET["direction"]];
+    }
+}
+
+$sort = "name";
+$sorts = [
+    "name",
+    "genre",
+    "Year",
+    "studio",
+    "score"
+];
+
+if (isset($_GET["sort"])) {
+    if (in_array($_GET["sort"], $sorts)) {
+        $sort = $_GET["sort"];
+    }
+}
+
+
+
+
+// Haal de gevraagde resultaten op
+$limit = 10;
+$offset = ($page - 1) * $limit;
+$sql = "SELECT * FROM movies ORDER BY " . $sort . " " . $direction . " LIMIT " . $offset . ", " . $limit;
+
+$result = $mysqli->query($sql);
+$rows = $result->fetch_all(MYSQLI_ASSOC);
+
+// Hoeveel pagina's zijn er?
+$pages = ceil($total / $limit);
+
+$mysqli->close();
 ?>
 <html>
 
 <head>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.1/css/jquery.dataTables.min.css">
-
 </head>
 
 <body>
-    <div class="movies">
-        <table id="myTable" class="table table-striped">
+    <div class="container">
+        <h1>Movies</h1>
+        <p><?= $total; ?> resultaten gevonden.</p>
+        <table class="table">
             <thead>
                 <tr>
                     <th scope="col">#</th>
-                    <th scope="col">Movie Name</th>
-                    <th scope="col">Genre</th>
-                    <th scope="col">Studio</th>
-                    <th scope="col">Score</th>
-                    <th scope="col">Rotten_Tomatos_Score</th>
-                    <th scope="col">Year</th>
+                    <th scope="col"><a href="index.php?sort=name&direction=<?= ($sort == 'name' && $direction == 'ASC' ? 'down' : 'up') ?>">Name</a></th>
+                    <th scope="col"><a href="index.php?sort=genre&direction=<?= ($sort == 'genre' && $direction == 'ASC' ? 'down' : 'up') ?>">Genre</a></th>
+                    <th scope=" col"><a href="index.php?sort=studio&direction=<?= ($sort == 'studio' && $direction == 'ASC' ? 'down' : 'up') ?>">Studio</a></th>
+                    <th scope=" col"><a href="index.php?sort=score&direction=<?= ($sort == 'score' && $direction == 'ASC' ? 'down' : 'up') ?>">Score</a></th>
+                    <th scope=" col"><a href="index.php?sort=Year&direction=<?= ($sort == 'Year' && $direction == 'ASC' ? 'down' : 'up') ?>">Year</a></th>
                 </tr>
             </thead>
             <tbody>
+                <?php
+                $counter = 1 + $offset;
+                foreach ($rows as $key => $row) {
+                ?>
+
+                    <tr <?php print($counter % 2 == 0 ? 'style="background-color: lightgray;"' : '') ?>>
+                        <td><?= $counter; ?></td>
+                        <td><?= $row["name"]; ?></td>
+                        <td><?= $row["genre"]; ?></td>
+                        <td><?= $row["studio"]; ?></td>
+                        <td><?= $row["score"]; ?></td>
+                        <td><?= $row["Year"]; ?></td>
+                    </tr>
 
                 <?php
-
-                if (isset($_GET['page_no']) && $_GET['page_no'] != "") {
-                    $page_no = $_GET['page_no'];
-                } else {
-                    $page_no = 1;
-                }
-
-                $total_records_per_page = 10;
-                $offset = ($page_no - 1) * $total_records_per_page;
-                $previous_page = $page_no - 1;
-                $next_page = $page_no + 1;
-                $adjacents = "2";
-
-
-
-                $result_count = $mysqli->query("SELECT COUNT(*) As total_records FROM movies");
-                $total_records = mysqli_fetch_array($result_count);
-                $total_records = $total_records['total_records'];
-                $total_no_of_pages = ceil($total_records / $total_records_per_page);
-                $second_last = $total_no_of_pages - 1; // total page minus 1
-                $sql = "SELECT * FROM movies LIMIT $offset, $total_records_per_page";
-                $result = $mysqli->query($sql);
-
-                $counter = 0;
-                while ($movie = mysqli_fetch_array($result)) {
                     $counter++;
-                    echo "<tr>
-                        <td>" . $counter . "</td>
-                        <td>" . $movie["name"] . "</td>
-                        <td>" . $movie["genre"] . "</td>
-                        <td>" . $movie["studio"] . "</td>
-                        <td>" . $movie["score"] . "</td>
-                        <td>" . $movie["rotten_tomatoes_score"] . "</td>
-                        <td>" . $movie["Year"] . "</td>
-                    </tr>";
                 }
                 ?>
 
+
+
             </tbody>
         </table>
-    </div>
-    <ul class="pagination">
+        <div class=" d-flex justify-content-between">
+            <?php if ($page !== 1) { ?>
+                <a class="page-link" style='text-decoration : none' href='?page=1'>&lsaquo;&lsaquo; First -- </a>
+            <?php } ?> <?php if ($page > 1) { ?>
+                <a class="page-link" href="index.php?page=<?= $page - 1 ?>&sort=<?= $sort ?>">previous</a>
+            <?php } ?>
 
-        <li <?php if ($page_no <= 1) {
-                echo "class='disabled'";
-            } ?>>
-            <a <?php if ($page_no > 1) {
-                    echo "href='?page_no=$previous_page'";
-                } ?>>Previous</a>
-        </li>
+            <?php
+            $minimal_links_to_show = 7;
+            if ($minimal_links_to_show > $pages) {
+                $minimal_links_to_show = $pages;
+            }
 
-        <?php
-        if ($total_no_of_pages <= 10) {
-            for ($counter = 1; $counter <= $total_no_of_pages; $counter++) {
-                if ($counter == $page_no) {
-                    echo "<li class='active'><a>$counter</a></li>";
+            $for_start = $page - floor($minimal_links_to_show / 2);
+            if ($for_start < 1) {
+                $for_start = 1;
+            }
+            $overflow = 0;
+
+            $links = [];
+            while (count($links) < $minimal_links_to_show) {
+                if ($for_start > $pages) {
+                    // opletten: geen pages tonen achteraan die niet mogen bestaan, dus voeg een extra page vooraan toe
+                    array_unshift($links, ($for_start - count($links) - 1));
                 } else {
-                    echo "<li><a href='?page_no=$counter'>$counter</a></li>";
+                    array_push($links, $for_start);
+                    $for_start++;
                 }
             }
-        } elseif ($total_no_of_pages > 10) {
 
-            if ($page_no <= 4) {
-                for ($counter = 1; $counter < 8; $counter++) {
-                    if ($counter == $page_no) {
-                        echo "<li class='active'><a>$counter</a></li>";
-                    } else {
-                        echo "<li><a href='?page_no=$counter'>$counter</a></li>";
-                    }
-                }
-                echo "<li><a>...</a></li>";
-                echo "<li><a href='?page_no=$second_last'>$second_last</a></li>";
-                echo "<li><a href='?page_no=$total_no_of_pages'>$total_no_of_pages</a></li>";
-            } elseif ($page_no > 4 && $page_no < $total_no_of_pages - 4) {
-                echo "<li><a href='?page_no=1'>1</a></li>";
-                echo "<li><a href='?page_no=2'>2</a></li>";
-                echo "<li><a>...</a></li>";
-                for ($counter = $page_no - $adjacents; $counter <= $page_no + $adjacents; $counter++) {
-                    if ($counter == $page_no) {
-                        echo "<li class='active'><a>$counter</a></li>";
-                    } else {
-                        echo "<li><a href='?page_no=$counter'>$counter</a></li>";
-                    }
-                }
-                echo "<li><a>...</a></li>";
-                echo "<li><a href='?page_no=$second_last'>$second_last</a></li>";
-                echo "<li><a href='?page_no=$total_no_of_pages'>$total_no_of_pages</a></li>";
-            } else {
-                echo "<li><a href='?page_no=1'>1</a></li>";
-                echo "<li><a href='?page_no=2'>2</a></li>";
-                echo "<li><a>...</a></li>";
-
-                for ($counter = $total_no_of_pages - 6; $counter <= $total_no_of_pages; $counter++) {
-                    if ($counter == $page_no) {
-                        echo "<li class='active'><a>$counter</a></li>";
-                    } else {
-                        echo "<li><a href='?page_no=$counter'>$counter</a></li>";
-                    }
-                }
+            foreach ($links as $link) {
+                print '<a class="page-link" href="index.php?page=' . $link . '&sort=' . $sort . '">' . ($link == $page ? '[' . $link . ']' : $link) . '</a> ';
             }
-        }
-        ?>
 
-        <li <?php if ($page_no >= $total_no_of_pages) {
-                echo "class='disabled'";
-            } ?>>
-            <a <?php if ($page_no < $total_no_of_pages) {
-                    echo "href='?page_no=$next_page'";
-                } ?>>Next </a>
-        </li>
-        <?php if ($page_no < $total_no_of_pages) {
-            echo "<li><a href='?page_no=$total_no_of_pages'>Last &rsaquo;&rsaquo;</a></li>";
-        } ?>
-    </ul>
+            ?>
 
+            <?php if ($page < $pages) { ?>
+                <a class="page-link" href="index.php?page=<?= $page + 1 ?>&sort=<?= $sort ?>">next</a>
+            <?php } ?>
+            <?php if ($page != $pages) {
+                echo "<a class='page-link' style='text-decoration : none' href='?page=$pages'>-- Last &rsaquo;&rsaquo;</a>";
+            } ?>
+        </div>
+
+    </div>
 </body>
-
 
 </html>
