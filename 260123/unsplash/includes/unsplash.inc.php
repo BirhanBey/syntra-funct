@@ -1,31 +1,39 @@
 <?php
 function getUnsplashPhotos()
 {
-  require 'options.env.php';
+    require 'options.env.php';
 
-  $url = 'https://api.unsplash.com/photos/?client_id=' . $unsplash_access_key;
+    $params = [
+        'client_id' => $unsplash_access_key,
+        'query' => 'hamburger',
+        'per_page' => 5,
+        'orientation' => 'landscape',
+        'order_by' => 'latest',
+    ];
 
-  // Initiate curl session in a variable (resource)
-  $curl_handle = curl_init();
+    $url = 'https://api.unsplash.com/search/photos/?' . http_build_query($params);
 
-  // Set the curl URL option
-  curl_setopt($curl_handle, CURLOPT_URL, $url);
+    // Initiate curl session in a variable (resource)
+    $curl_handle = curl_init();
 
-  // This option will return data as a string instead of direct output
-  curl_setopt($curl_handle, CURLOPT_RETURNTRANSFER, true);
+    // Set the curl URL option
+    curl_setopt($curl_handle, CURLOPT_URL, $url);
 
-  // Bypass SSL verification (for Windows users)
-  curl_setopt($curl_handle, CURLOPT_SSL_VERIFYPEER, false);
+    // This option will return data as a string instead of direct output
+    curl_setopt($curl_handle, CURLOPT_RETURNTRANSFER, true);
 
-  // Execute curl & store data in a variable
-  $curl_data = curl_exec($curl_handle);
-  curl_close($curl_handle);
+    // Bypass SSL verification (for Windows users)
+    curl_setopt($curl_handle, CURLOPT_SSL_VERIFYPEER, false);
 
-  $response = json_decode($curl_data);
+    // Execute curl & store data in a variable
+    $curl_data = curl_exec($curl_handle);
+    curl_close($curl_handle);
 
-  if (!$response) {
-    return array();
-  }
+    $response = json_decode($curl_data);
 
-  return $response;
+    if (!$response) {
+        return array();
+    }
+
+    return $response;
 }
