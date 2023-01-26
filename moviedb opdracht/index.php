@@ -42,7 +42,7 @@ if ($result && $result->num_rows > 0) {
 </head>
 
 <body>
-    <div class="movies">
+    <div class="movies m-5">
         <table id="myTable" class="table table-striped">
             <thead>
                 <tr>

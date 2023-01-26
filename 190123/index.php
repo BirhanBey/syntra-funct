@@ -2,6 +2,7 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+
 $db_host = '127.0.0.1';
 $db_user = 'root';
 $db_password = 'rootpass';
@@ -18,10 +19,24 @@ if ($mysqli->connect_error) {
     exit();
 }
 
+
+
+// Filter Studio
+$where = "";
+
+if (isset($_GET["studio"])) {
+    $where = "WHERE studio LIKE '" . urldecode($_GET["studio"]) . "' ";
+}
+
 // Haal het totaal cijfer op
-$sql = "SELECT COUNT(ID) AS total FROM movies";
-$result = $mysqli->query($sql)->fetch_assoc();
-$total = $result["total"];
+function getTotal($where =''){
+    global $mysqli;
+    
+    $sql = "SELECT COUNT(ID) AS total FROM movies " . $where;
+    $result = $mysqli->query($sql)->fetch_assoc();
+    return $result["total"];
+}
+$total = getTotal($where);
 
 // Get page ophalen
 $page = 1;
@@ -32,10 +47,12 @@ if (isset($_GET["page"])) {
     }
 }
 
-$direction = 'ASC';
+// Sort direction
+$direction = "ASC";
+
 $directions = [
-    'up' => 'ASC',
-    'down' => 'DESC'
+    "up" => "ASC",
+    "down" =>  "DESC"
 ];
 
 if (isset($_GET["direction"])) {
@@ -45,7 +62,9 @@ if (isset($_GET["direction"])) {
     }
 }
 
+// Sort field
 $sort = "name";
+
 $sorts = [
     "name",
     "genre",
@@ -62,11 +81,13 @@ if (isset($_GET["sort"])) {
 
 
 
-
 // Haal de gevraagde resultaten op
-$limit = 10;
+$limit = 7;
 $offset = ($page - 1) * $limit;
-$sql = "SELECT * FROM movies ORDER BY " . $sort . " " . $direction . " LIMIT " . $offset . ", " . $limit;
+$sql = "SELECT * 
+    FROM movies " . $where . "
+    ORDER BY " . $sort . " " . $direction . " 
+    LIMIT " . $offset . ", " . $limit;
 
 $result = $mysqli->query($sql);
 $rows = $result->fetch_all(MYSQLI_ASSOC);
@@ -92,9 +113,9 @@ $mysqli->close();
                     <th scope="col">#</th>
                     <th scope="col"><a href="index.php?sort=name&direction=<?= ($sort == 'name' && $direction == 'ASC' ? 'down' : 'up') ?>">Name</a></th>
                     <th scope="col"><a href="index.php?sort=genre&direction=<?= ($sort == 'genre' && $direction == 'ASC' ? 'down' : 'up') ?>">Genre</a></th>
-                    <th scope=" col"><a href="index.php?sort=studio&direction=<?= ($sort == 'studio' && $direction == 'ASC' ? 'down' : 'up') ?>">Studio</a></th>
-                    <th scope=" col"><a href="index.php?sort=score&direction=<?= ($sort == 'score' && $direction == 'ASC' ? 'down' : 'up') ?>">Score</a></th>
-                    <th scope=" col"><a href="index.php?sort=Year&direction=<?= ($sort == 'Year' && $direction == 'ASC' ? 'down' : 'up') ?>">Year</a></th>
+                    <th scope="col"><a href="index.php?sort=studio&direction=<?= ($sort == 'studio' && $direction == 'ASC' ? 'down' : 'up') ?>">Studio</a></th>
+                    <th scope="col"><a href="index.php?sort=score&direction=<?= ($sort == 'score' && $direction == 'ASC' ? 'down' : 'up') ?>">Score</a></th>
+                    <th scope="col"><a href="index.php?sort=Year&direction=<?= ($sort == 'Year' && $direction == 'ASC' ? 'down' : 'up') ?>">Year</a></th>
                 </tr>
             </thead>
             <tbody>
@@ -104,12 +125,12 @@ $mysqli->close();
                 ?>
 
                     <tr <?php print($counter % 2 == 0 ? 'style="background-color: lightgray;"' : '') ?>>
-                        <td><?= $counter; ?></td>
-                        <td><?= $row["name"]; ?></td>
-                        <td><?= $row["genre"]; ?></td>
-                        <td><?= $row["studio"]; ?></td>
-                        <td><?= $row["score"]; ?></td>
-                        <td><?= $row["Year"]; ?></td>
+                        <td><?= $counter ?></td>
+                        <td><?= $row["name"] ?></td>
+                        <td><?= $row["genre"] ?></td>
+                        <td><a href="index.php?studio=<?= urlencode($row["studio"]) ?>"><?= $row["studio"] ?></a></td>
+                        <td><?= $row["score"] ?></td>
+                        <td><?= $row["Year"] ?></td>
                     </tr>
 
                 <?php
@@ -117,11 +138,9 @@ $mysqli->close();
                 }
                 ?>
 
-
-
             </tbody>
         </table>
-        <div class=" d-flex justify-content-between">
+        <div class="d-flex">
             <?php if ($page !== 1) { ?>
                 <a class="page-link" style='text-decoration : none' href='?page=1'>&lsaquo;&lsaquo; First -- </a>
             <?php } ?> <?php if ($page > 1) { ?>
