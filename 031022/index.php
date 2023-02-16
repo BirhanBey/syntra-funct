@@ -52,7 +52,7 @@ if(is_null($_SESSION['dil'])){
 
        $ar = Array (
         "tr" => [
-            "title" => "Türkça",
+            "title" => "Türkçe",
             "name" => "Birhan",
             "surname" => "Yorukoglu",
             "ageOf" => [
